@@ -5,15 +5,22 @@ import {
   Bell,
   BookOpen,
   Brain,
+  ChevronDown,
+  ChevronRight,
   CheckCircle2,
   Droplets,
+  Eye,
+  EyeOff,
   FileText,
   Footprints,
   HelpCircle,
   Heart,
   History,
+  Laptop,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
+  Mail,
   Moon,
   RefreshCw,
   Save,
@@ -22,8 +29,10 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Sun,
   TimerReset,
   Trash2,
+  User,
   X,
   Zap,
 } from "lucide-react";
@@ -167,6 +176,10 @@ const fallbackHistory = [
 ];
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(
+    () => localStorage.getItem("mindtrack-session") === "active",
+  );
+  const [publicView, setPublicView] = useState("landing");
   const [activeView, setActiveView] = useState("dashboard");
   const [form, setForm] = useState(initialForm);
   const [history, setHistory] = useState([]);
@@ -179,6 +192,19 @@ function App() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem("mindtrack-theme") || "light");
+  const [loginForm, setLoginForm] = useState({ email: "name@university.edu", password: "mindtrack" });
+  const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [registerForm, setRegisterForm] = useState({
+    name: "John Doe",
+    email: "john@example.com",
+    password: "mindtrack",
+    confirmPassword: "mindtrack",
+  });
+  const [registerError, setRegisterError] = useState("");
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   const latest = history[0];
   const latestResult = latest?.result;
@@ -187,8 +213,14 @@ function App() {
   const filteredHistory = useMemo(() => filterHistory(history, searchTerm), [history, searchTerm]);
 
   useEffect(() => {
-    refreshData();
-  }, []);
+    if (isAuthenticated) {
+      refreshData();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    localStorage.setItem("mindtrack-theme", theme);
+  }, [theme]);
 
   async function refreshData() {
     setError("");
@@ -278,12 +310,100 @@ function App() {
   }
 
   function handleLogout() {
+    localStorage.removeItem("mindtrack-session");
+    setIsAuthenticated(false);
     setActiveView("dashboard");
-    showToast("Logout demo berhasil. Data lokal tetap aman.");
+    setShowNotifications(false);
+    setShowSettingsMenu(false);
+    setSearchTerm("");
+  }
+
+  function handleLogin(event) {
+    event.preventDefault();
+    if (!loginForm.email.trim() || !loginForm.password.trim()) {
+      setLoginError("Email dan password wajib diisi.");
+      return;
+    }
+
+    if (rememberMe) {
+      localStorage.setItem("mindtrack-session", "active");
+    }
+    setLoginError("");
+    setIsAuthenticated(true);
+    showToast("Login berhasil.");
+  }
+
+  function handleRegister(event) {
+    event.preventDefault();
+    const { name, email, password, confirmPassword } = registerForm;
+
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
+      setRegisterError("Semua field registrasi wajib diisi.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setRegisterError("Password dan konfirmasi password belum sama.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setRegisterError("Password minimal 6 karakter.");
+      return;
+    }
+
+    setRegisterError("");
+    setLoginForm({ email, password });
+    localStorage.setItem("mindtrack-session", "active");
+    setIsAuthenticated(true);
+    showToast("Registrasi berhasil.");
+  }
+
+  if (!isAuthenticated) {
+    if (publicView === "landing") {
+      return (
+        <LandingPage
+          theme={theme}
+          onOpenLogin={() => setPublicView("login")}
+          onOpenRegister={() => setPublicView("register")}
+        />
+      );
+    }
+
+    if (publicView === "register") {
+      return (
+        <RegisterPage
+          theme={theme}
+          registerForm={registerForm}
+          registerError={registerError}
+          showPassword={showRegisterPassword}
+          setRegisterForm={setRegisterForm}
+          setShowPassword={setShowRegisterPassword}
+          onSubmit={handleRegister}
+          onOpenLogin={() => setPublicView("login")}
+        />
+      );
+    }
+
+    return (
+      <LoginPage
+        theme={theme}
+        loginForm={loginForm}
+        loginError={loginError}
+        rememberMe={rememberMe}
+        showPassword={showPassword}
+        setLoginForm={setLoginForm}
+        setRememberMe={setRememberMe}
+        setShowPassword={setShowPassword}
+        onSubmit={handleLogin}
+        onBack={() => setPublicView("landing")}
+        onOpenRegister={() => setPublicView("register")}
+      />
+    );
   }
 
   return (
-    <main className="mindtrack-shell">
+    <main className="mindtrack-shell" data-theme={theme}>
       <aside className="sidebar">
         <div className="brand">
           <span className="brand-mark">M</span>
@@ -372,6 +492,10 @@ function App() {
                 setActiveView("resources");
                 setShowSettingsMenu(false);
               }}
+              theme={theme}
+              onToggleTheme={() => {
+                setTheme((current) => (current === "dark" ? "light" : "dark"));
+              }}
             />
           )}
         </header>
@@ -427,6 +551,469 @@ function App() {
         {toast && <Toast message={toast} />}
         {activeSession && <SessionModal session={activeSession} onClose={() => setActiveSession(null)} />}
       </section>
+    </main>
+  );
+}
+
+function LandingPage({ theme, onOpenLogin, onOpenRegister }) {
+  const stats = [
+    ["75%", "Report High Stress", "Students report recurring pressure during peak study periods."],
+    ["48%", "Digital Burnout", "Daily app habits can quietly increase cognitive fatigue."],
+    ["1 in 3", "Need Support", "Many students delay help until stress becomes visible."],
+  ];
+
+  const features = [
+    [Brain, "AI Stress Prediction", "Our model analyzes digital and wellness markers to estimate stress risk early."],
+    [Sparkles, "Personalized Recommendations", "Actionable micro-interventions for study breaks, sleep, and focus."],
+    [Activity, "Activity Monitoring", "Track screen balance, app usage, and daily wellbeing patterns."],
+    [History, "Prediction History", "Review previous assessments and changes in stress indicators."],
+  ];
+
+  const steps = [
+    [Send, "Fill Form", "Share daily activity and wellness indicators."],
+    [Brain, "AI Analysis", "Model processes mental and digital patterns."],
+    [BarChart3, "Get Results", "Review confidence score and intensity map."],
+    [ShieldCheck, "Recommendations", "Receive practical next steps."],
+  ];
+
+  const testimonials = [
+    ["Sarah", "Psychology Student", "MindTrack helped me notice my late-night study habits before burnout started."],
+    ["Michael", "Engineering Student", "The study break recommendations feel practical and easy to follow."],
+    ["Anya", "Final Year Student", "Seeing the data helped me stay grounded during finals week."],
+  ];
+
+  return (
+    <main className="landing-page" data-theme={theme}>
+      <header className="landing-nav">
+        <div className="landing-brand">
+          <span className="brand-mark">M</span>
+          <strong>MindTrack</strong>
+        </div>
+        <nav>
+          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#about">About</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+        <div>
+          <button type="button" className="landing-login" onClick={onOpenLogin}>Login</button>
+          <button type="button" className="landing-register" onClick={onOpenRegister}>Register</button>
+        </div>
+      </header>
+
+      <section className="landing-hero" id="home">
+        <div className="landing-copy">
+          <span className="landing-badge">
+            <Sparkles size={15} />
+            AI-powered student wellbeing
+          </span>
+          <h1>Understand Your Mental Health Through Digital Activity Patterns</h1>
+          <p>
+            AI-based stress detection for university students. Discover patterns in your daily digital life to manage
+            stress before it becomes overwhelming.
+          </p>
+          <div className="landing-actions">
+            <button type="button" className="landing-primary" onClick={onOpenRegister}>Start Screening</button>
+            <a href="#features" className="landing-secondary">Learn More</a>
+          </div>
+        </div>
+
+        <div className="hero-preview">
+          <div className="hero-preview-card">
+            <Laptop size={52} />
+            <div className="preview-chart">
+              <span /><span /><span /><span /><span />
+            </div>
+            <div className="preview-callout">
+              <Sparkles size={22} />
+              <div>
+                <strong>Real-time AI Insight</strong>
+                <span>Stress signals detected from digital balance.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-section center" id="about">
+        <div className="landing-section-title">
+          <h2>Modern Education, Modern Challenges</h2>
+          <p>Digital academic pressure is measurable when behavior patterns are seen clearly.</p>
+        </div>
+        <div className="landing-stats">
+          {stats.map(([value, title, text]) => (
+            <article key={title}>
+              <strong>{value}</strong>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section" id="features">
+        <div className="landing-section-row">
+          <div>
+            <h2>Empathetic Intelligence</h2>
+            <p>A supportive AI experience designed for student wellbeing.</p>
+          </div>
+          <div className="landing-arrows">
+            <button type="button" aria-label="Previous feature"><ChevronRight size={18} /></button>
+            <button type="button" aria-label="Next feature"><ChevronRight size={18} /></button>
+          </div>
+        </div>
+        <div className="landing-feature-grid">
+          {features.map(([Icon, title, text], index) => (
+            <article className={index === 0 ? "feature-large" : ""} key={title}>
+              <span><Icon size={24} /></span>
+              <div>
+                <h3>{title}</h3>
+                <p>{text}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section center">
+        <h2>Your Path to Clarity</h2>
+        <div className="landing-steps">
+          {steps.map(([Icon, title, text]) => (
+            <article key={title}>
+              <span><Icon size={24} /></span>
+              <h3>{title}</h3>
+              <p>{text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="mockup-band">
+        <div className="browser-mockup">
+          <div className="browser-top">
+            <span /><span /><span />
+            <small>mindtrack.ai/dashboard</small>
+          </div>
+          <div className="browser-body">
+            <aside><span /><span /><span /></aside>
+            <section>
+              <div className="mockup-head">
+                <h3>Weekly Overview</h3>
+                <button type="button">Aug 4 - Aug 11</button>
+              </div>
+              <div className="mockup-metrics">
+                <div><span>Stress Index</span><strong>Low</strong></div>
+                <div><span>Sleep Quality</span><strong>7.5h</strong></div>
+                <div><span>Screen Balance</span><strong>Good</strong></div>
+              </div>
+              <div className="mockup-chart"><span /></div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-disclaimer">
+        <ShieldCheck size={28} />
+        <p>
+          <strong>Medical Disclaimer:</strong> MindTrack is intended for mental wellness insight and does not replace
+          professional medical diagnosis. If you are in crisis, contact local emergency services or university support.
+        </p>
+      </section>
+
+      <section className="landing-section center">
+        <h2>What Students Say</h2>
+        <div className="testimonial-grid">
+          {testimonials.map(([name, role, text]) => (
+            <article key={name}>
+              <div>*****</div>
+              <p>"{text}"</p>
+              <footer>
+                <span />
+                <div>
+                  <strong>{name}</strong>
+                  <small>{role}</small>
+                </div>
+              </footer>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-faq" id="faq">
+        <h2>Common Questions</h2>
+        <details open>
+          <summary>Is my data secure?<ChevronDown size={18} /></summary>
+          <p>Your data is used for wellness tracking in this capstone prototype and is stored locally by the backend.</p>
+        </details>
+        <details>
+          <summary>How does the AI detect stress?<ChevronDown size={18} /></summary>
+          <p>The model combines self-reported indicators with digital activity features to estimate stress level.</p>
+        </details>
+        <details>
+          <summary>Can I share results with my counselor?<ChevronDown size={18} /></summary>
+          <p>You can save a report from the results page and use it as a discussion aid.</p>
+        </details>
+      </section>
+
+      <section className="landing-cta">
+        <h2>Take the first step towards better mental wellbeing</h2>
+        <p>Let MindTrack help you understand patterns, reflect clearly, and take practical action.</p>
+        <button type="button" onClick={onOpenRegister}>Start Screening</button>
+      </section>
+
+      <footer className="landing-footer">
+        <div>
+          <strong>MindTrack</strong>
+          <p>Supportive intelligence for mental wellbeing.</p>
+        </div>
+        <div><strong>Product</strong><span>Features</span><span>How it Works</span><span>Research</span></div>
+        <div><strong>Support</strong><span>Contact Support</span><span>Privacy Policy</span><span>Terms of Service</span></div>
+        <div><strong>Stay Connected</strong><span>Careers</span><span>Press Kit</span></div>
+      </footer>
+    </main>
+  );
+}
+
+function LoginPage({
+  theme,
+  loginForm,
+  loginError,
+  rememberMe,
+  showPassword,
+  setLoginForm,
+  setRememberMe,
+  setShowPassword,
+  onSubmit,
+  onOpenRegister,
+}) {
+  return (
+    <main className="login-page" data-theme={theme}>
+      <section className="login-visual">
+        <div className="login-brand">
+          <span className="brand-mark">M</span>
+          <strong>MindTrack</strong>
+        </div>
+        <div className="wellbeing-art" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+        </div>
+        <h1>Your journey to clarity starts here.</h1>
+        <p>Supportive intelligence for your mental wellbeing. Experience a guided approach to understanding your mind.</p>
+      </section>
+
+      <section className="login-panel">
+        <form className="login-card" onSubmit={onSubmit}>
+          <div className="login-card-brand">
+            <span className="brand-mark">M</span>
+          </div>
+          <h2>Welcome Back</h2>
+          <p>Login to your MindTrack account</p>
+
+          <label className="login-field">
+            <span>Email Address</span>
+            <div>
+              <input
+                type="email"
+                value={loginForm.email}
+                placeholder="name@university.edu"
+                onChange={(event) =>
+                  setLoginForm((current) => ({ ...current, email: event.target.value }))
+                }
+              />
+            </div>
+          </label>
+
+          <label className="login-field">
+            <span>Password</span>
+            <div>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={loginForm.password}
+                placeholder="Password"
+                onChange={(event) =>
+                  setLoginForm((current) => ({ ...current, password: event.target.value }))
+                }
+              />
+              <button type="button" onClick={() => setShowPassword((current) => !current)} aria-label="Toggle password">
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </label>
+
+          <div className="login-options">
+            <label>
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+              />
+              <span>Remember me</span>
+            </label>
+            <button type="button">Forgot password?</button>
+          </div>
+
+          {loginError && <p className="login-error">{loginError}</p>}
+
+          <button className="login-button" type="submit">
+            Login
+          </button>
+
+          <div className="login-divider">
+            <span />
+            <small>Or continue with</small>
+            <span />
+          </div>
+
+          <button className="google-button" type="button">
+            <span className="google-dot" aria-hidden="true" />
+            Continue with Google
+          </button>
+
+          <p className="register-copy">
+            Don't have an account? <button type="button" onClick={onOpenRegister}>Register</button>
+          </p>
+        </form>
+
+        <footer>(c) 2024 MindTrack AI. Supportive Intelligence for Mental Wellbeing.</footer>
+      </section>
+    </main>
+  );
+}
+
+function RegisterPage({
+  theme,
+  registerForm,
+  registerError,
+  showPassword,
+  setRegisterForm,
+  setShowPassword,
+  onSubmit,
+  onOpenLogin,
+}) {
+  const strength = getPasswordStrength(registerForm.password);
+
+  function updateRegisterField(name, value) {
+    setRegisterForm((current) => ({ ...current, [name]: value }));
+  }
+
+  return (
+    <main className="register-page" data-theme={theme}>
+      <header className="register-top-brand">
+        <span className="brand-mark">M</span>
+        <strong>MindTrack</strong>
+      </header>
+
+      <section className="register-main">
+        <div className="register-visual" aria-hidden="true">
+          <Sparkles size={48} />
+        </div>
+
+        <form className="register-card" onSubmit={onSubmit}>
+          <div className="register-card-title">
+            <h1>Create Account</h1>
+            <p>Step towards your mental clarity today.</p>
+          </div>
+
+          <div className="register-form">
+            <label className="register-field">
+              <span>Full Name</span>
+              <div>
+                <User size={16} />
+                <input
+                  type="text"
+                  value={registerForm.name}
+                  placeholder="John Doe"
+                  onChange={(event) => updateRegisterField("name", event.target.value)}
+                />
+              </div>
+            </label>
+
+            <label className="register-field">
+              <span>Email Address</span>
+              <div>
+                <Mail size={18} />
+                <input
+                  type="email"
+                  value={registerForm.email}
+                  placeholder="john@example.com"
+                  onChange={(event) => updateRegisterField("email", event.target.value)}
+                />
+              </div>
+            </label>
+
+            <label className="register-field password-field">
+              <span>Password</span>
+              <div>
+                <LockKeyhole size={17} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={registerForm.password}
+                  placeholder="Password"
+                  onChange={(event) => updateRegisterField("password", event.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label="Toggle register password"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              <div className="password-strength">
+                <div>
+                  <span>Password strength</span>
+                  <strong>{strength.label}</strong>
+                </div>
+                <span style={{ "--strength": `${strength.value}%` }} />
+              </div>
+            </label>
+
+            <label className="register-field">
+              <span>Confirm Password</span>
+              <div>
+                <LockKeyhole size={17} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={registerForm.confirmPassword}
+                  placeholder="Confirm password"
+                  onChange={(event) => updateRegisterField("confirmPassword", event.target.value)}
+                />
+              </div>
+            </label>
+
+            {registerError && <p className="login-error">{registerError}</p>}
+
+            <button className="register-submit" type="submit">Register</button>
+
+            <div className="register-divider">
+              <span />
+              <small>OR CONTINUE WITH</small>
+            </div>
+
+            <button className="register-google" type="button">
+              <span className="google-dot" aria-hidden="true" />
+              Sign up with Google
+            </button>
+          </div>
+
+          <p className="register-login-copy">
+            Already have an account? <button type="button" onClick={onOpenLogin}>Login</button>
+          </p>
+        </form>
+      </section>
+
+      <footer className="register-footer">
+        <div>
+          <strong>MindTrack AI</strong>
+          <span>(c) 2024 MindTrack AI. Supportive Intelligence for Mental Wellbeing.</span>
+        </div>
+        <nav>
+          <button type="button">Privacy Policy</button>
+          <button type="button">Terms of Service</button>
+          <button type="button">Contact Support</button>
+        </nav>
+      </footer>
     </main>
   );
 }
@@ -849,7 +1436,18 @@ function NotificationsPanel({ status, history, onClose }) {
   );
 }
 
-function SettingsMenu({ health, status, onClose, onOpenSettings, onRefresh, onOpenResources }) {
+function SettingsMenu({
+  health,
+  status,
+  theme,
+  onClose,
+  onOpenSettings,
+  onRefresh,
+  onOpenResources,
+  onToggleTheme,
+}) {
+  const isDark = theme === "dark";
+
   return (
     <aside className="settings-menu">
       <div className="settings-menu-head">
@@ -873,6 +1471,10 @@ function SettingsMenu({ health, status, onClose, onOpenSettings, onRefresh, onOp
       <button type="button" onClick={onOpenResources}>
         <BookOpen size={18} />
         <span>Support Resources</span>
+      </button>
+      <button type="button" onClick={onToggleTheme}>
+        {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        <span>{isDark ? "Light Theme" : "Dark Theme"}</span>
       </button>
 
       <div className="settings-menu-foot">
@@ -945,6 +1547,26 @@ function filterHistory(history, searchTerm) {
       .toLowerCase();
     return combined.includes(query);
   });
+}
+
+function getPasswordStrength(password) {
+  let score = 0;
+  if (password.length >= 6) score += 35;
+  if (password.length >= 10) score += 20;
+  if (/[A-Z]/.test(password)) score += 15;
+  if (/[0-9]/.test(password)) score += 15;
+  if (/[^A-Za-z0-9]/.test(password)) score += 15;
+
+  if (score >= 80) {
+    return { label: "Strong", value: 100 };
+  }
+  if (score >= 50) {
+    return { label: "Good", value: 70 };
+  }
+  if (score > 0) {
+    return { label: "Weak", value: 35 };
+  }
+  return { label: "Empty", value: 0 };
 }
 
 function statusLabel(status, health) {

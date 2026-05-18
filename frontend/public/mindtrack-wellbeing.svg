@@ -1,0 +1,82 @@
+<svg width="467" height="701" viewBox="0 0 467 701" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="235" y1="0" x2="235" y2="701" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BDB7C1"/>
+      <stop offset="0.36" stop-color="#DED5DD"/>
+      <stop offset="0.72" stop-color="#F4EFF2"/>
+      <stop offset="1" stop-color="#E6E8F4"/>
+    </linearGradient>
+    <linearGradient id="wavePurple" x1="0" y1="176" x2="467" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EDEAF4"/>
+      <stop offset="0.44" stop-color="#CFC2F2"/>
+      <stop offset="0.72" stop-color="#F4E3EC"/>
+      <stop offset="1" stop-color="#F6F0E9"/>
+    </linearGradient>
+    <radialGradient id="orbWhite" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(126 246) rotate(60) scale(82)">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.55" stop-color="#F8F4EE"/>
+      <stop offset="1" stop-color="#D5D0DF"/>
+    </radialGradient>
+    <radialGradient id="orbPurple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(235 226) rotate(75) scale(96)">
+      <stop stop-color="#F1E9FF"/>
+      <stop offset="0.46" stop-color="#C7B5F2"/>
+      <stop offset="1" stop-color="#8F7BE2"/>
+    </radialGradient>
+    <radialGradient id="orbLilac" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(331 252) rotate(70) scale(74)">
+      <stop stop-color="#FFF9EE"/>
+      <stop offset="0.56" stop-color="#E7D8EA"/>
+      <stop offset="1" stop-color="#AC8CE0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#7462DB" flood-opacity="0.18"/>
+      <feDropShadow dx="-6" dy="-8" stdDeviation="8" flood-color="#FFFFFF" flood-opacity="0.55"/>
+    </filter>
+    <filter id="blurGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <rect width="467" height="701" fill="url(#bg)"/>
+  <rect y="474" width="467" height="227" fill="url(#bg)" opacity="0.42"/>
+  <ellipse cx="240" cy="532" rx="255" ry="184" fill="#FFFDFB" opacity="0.42" filter="url(#blurGlow)"/>
+
+  <g opacity="0.78">
+    <path d="M-90 113C-7 104 38 147 96 184C164 228 222 196 276 188C347 177 386 221 467 220C530 219 577 188 627 180" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+    <path d="M-90 134C-9 124 42 168 103 207C167 249 224 221 285 212C359 201 390 244 467 246C533 247 579 216 627 207" stroke="#E7DFFC" stroke-width="7" stroke-linecap="round"/>
+    <path d="M-90 154C-8 145 44 188 104 227C172 271 230 242 288 234C360 224 392 266 467 267C529 268 580 239 627 230" stroke="#FFF9F0" stroke-width="12" stroke-linecap="round" opacity="0.92"/>
+    <path d="M-90 181C-8 173 46 212 111 250C178 289 224 260 286 252C356 243 397 286 467 294C528 302 575 277 627 263" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" opacity="0.76"/>
+    <path d="M-90 199C-8 193 42 232 112 269C177 304 223 280 286 273C353 266 396 306 467 315C530 323 575 301 627 288" stroke="url(#wavePurple)" stroke-width="7" stroke-linecap="round" opacity="0.72"/>
+    <path d="M-90 221C-3 216 43 250 109 285C178 322 220 302 280 296C350 289 396 327 467 338C529 348 574 328 627 313" stroke="#FFFDF8" stroke-width="10" stroke-linecap="round" opacity="0.86"/>
+  </g>
+
+  <g filter="url(#softShadow)">
+    <circle cx="235" cy="226" r="77" fill="url(#orbPurple)"/>
+    <circle cx="149" cy="211" r="56" fill="url(#orbWhite)"/>
+    <circle cx="319" cy="205" r="55" fill="url(#orbLilac)"/>
+    <circle cx="331" cy="292" r="53" fill="url(#orbWhite)"/>
+    <circle cx="149" cy="300" r="52" fill="url(#orbWhite)"/>
+    <circle cx="101" cy="253" r="34" fill="url(#orbLilac)"/>
+    <circle cx="380" cy="247" r="33" fill="url(#orbLilac)"/>
+    <circle cx="247" cy="339" r="48" fill="url(#orbPurple)" opacity="0.82"/>
+    <circle cx="178" cy="357" r="45" fill="url(#orbPurple)" opacity="0.76"/>
+    <circle cx="281" cy="351" r="37" fill="url(#orbPurple)" opacity="0.72"/>
+    <circle cx="222" cy="142" r="25" fill="url(#orbWhite)"/>
+    <circle cx="280" cy="148" r="32" fill="url(#orbWhite)"/>
+    <circle cx="303" cy="300" r="23" fill="url(#orbLilac)"/>
+    <circle cx="202" cy="295" r="23" fill="url(#orbWhite)"/>
+    <circle cx="235" cy="299" r="27" fill="url(#orbWhite)"/>
+    <circle cx="205" cy="107" r="19" fill="url(#orbWhite)"/>
+    <circle cx="182" cy="129" r="45" fill="url(#orbWhite)"/>
+    <circle cx="259" cy="125" r="35" fill="url(#orbWhite)"/>
+    <circle cx="304" cy="120" r="29" fill="url(#orbLilac)"/>
+  </g>
+
+  <g filter="url(#softShadow)" opacity="0.8">
+    <circle cx="31" cy="231" r="13" fill="url(#orbLilac)"/>
+    <circle cx="64" cy="297" r="18" fill="url(#orbWhite)"/>
+    <circle cx="421" cy="207" r="14" fill="url(#orbLilac)"/>
+    <circle cx="438" cy="293" r="18" fill="url(#orbWhite)"/>
+  </g>
+
+  <rect y="515" width="467" height="186" fill="url(#bg)" opacity="0.32"/>
+</svg>
