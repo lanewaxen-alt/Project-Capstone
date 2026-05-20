@@ -20,7 +20,6 @@ import {
   LayoutDashboard,
   LockKeyhole,
   LogOut,
-  Mail,
   Moon,
   RefreshCw,
   Save,
@@ -42,6 +41,8 @@ import {
   createPrediction,
   deletePrediction,
   getPredictions,
+  login as apiLogin,
+  register as apiRegister,
 } from "./services/api";
 
 const initialForm = {
@@ -175,28 +176,11 @@ const fallbackHistory = [
   { id: "fallback-3", date: "Oct 22, 2023", level: "Low (22%)", action: "Morning Yoga", sentiment: "Positive" },
 ];
 
-const publicViews = new Set(["landing", "login", "register"]);
-
-function readPublicView() {
-  const stateView = window.history.state?.publicView;
-  if (publicViews.has(stateView)) {
-    return stateView;
-  }
-
-  const hashView = window.location.hash.replace("#", "");
-  return publicViews.has(hashView) ? hashView : "landing";
-}
-
-function publicViewUrl(view) {
-  const { pathname, search } = window.location;
-  return view === "landing" ? `${pathname}${search}` : `${pathname}${search}#${view}`;
-}
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => localStorage.getItem("mindtrack-session") === "active",
   );
-  const [publicView, setPublicView] = useState(readPublicView);
+  const [publicView, setPublicView] = useState("landing");
   const [activeView, setActiveView] = useState("dashboard");
   const [form, setForm] = useState(initialForm);
   const [history, setHistory] = useState([]);
@@ -210,16 +194,10 @@ function App() {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [activeSession, setActiveSession] = useState(null);
   const [theme, setTheme] = useState(() => localStorage.getItem("mindtrack-theme") || "light");
-  const [loginForm, setLoginForm] = useState({ email: "name@university.edu", password: "mindtrack" });
+  const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [loginError, setLoginError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
-  const [registerForm, setRegisterForm] = useState({
-    name: "John Doe",
-    email: "john@example.com",
-    password: "mindtrack",
-    confirmPassword: "mindtrack",
-  });
+  const [registerForm, setRegisterForm] = useState({ username: "", password: "" });
   const [registerError, setRegisterError] = useState("");
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
@@ -236,30 +214,8 @@ function App() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    const currentView = readPublicView();
-    window.history.replaceState({ ...window.history.state, publicView: currentView }, "", publicViewUrl(currentView));
-
-    function handlePopState() {
-      setPublicView(readPublicView());
-    }
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem("mindtrack-theme", theme);
   }, [theme]);
-
-  function navigatePublicView(view, mode = "push") {
-    const nextView = publicViews.has(view) ? view : "landing";
-    window.history[mode === "replace" ? "replaceState" : "pushState"](
-      { ...window.history.state, publicView: nextView },
-      "",
-      publicViewUrl(nextView),
-    );
-    setPublicView(nextView);
-  }
 
   async function refreshData() {
     setError("");
@@ -350,53 +306,64 @@ function App() {
 
   function handleLogout() {
     localStorage.removeItem("mindtrack-session");
+    localStorage.removeItem("mindtrack-username");
+    localStorage.removeItem("mindtrack-token");
     setIsAuthenticated(false);
     setActiveView("dashboard");
     setShowNotifications(false);
     setShowSettingsMenu(false);
     setSearchTerm("");
-    navigatePublicView("landing", "replace");
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
-    if (!loginForm.email.trim() || !loginForm.password.trim()) {
-      setLoginError("Email dan password wajib diisi.");
+    if (!loginForm.username.trim() || !loginForm.password.trim()) {
+      setLoginError("Username dan password wajib diisi.");
       return;
-    }
-
-    if (rememberMe) {
-      localStorage.setItem("mindtrack-session", "active");
     }
     setLoginError("");
-    setIsAuthenticated(true);
-    showToast("Login berhasil.");
+    try {
+      const data = await apiLogin(loginForm.username.trim(), loginForm.password);
+      localStorage.setItem("mindtrack-session", "active");
+      localStorage.setItem("mindtrack-username", data.username);
+      localStorage.setItem("mindtrack-token", data.token);
+      setIsAuthenticated(true);
+      showToast("Login berhasil.");
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Login gagal. Periksa username dan password.";
+      setLoginError(msg);
+    }
   }
 
-  function handleRegister(event) {
+  async function handleRegister(event) {
     event.preventDefault();
-    const { name, email, password, confirmPassword } = registerForm;
+    const { username, password } = registerForm;
 
-    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setRegisterError("Semua field registrasi wajib diisi.");
+    if (!username.trim() || !password.trim()) {
+      setRegisterError("Username dan password wajib diisi.");
       return;
     }
-
-    if (password !== confirmPassword) {
-      setRegisterError("Password dan konfirmasi password belum sama.");
+    if (username.trim().length < 3) {
+      setRegisterError("Username minimal 3 karakter.");
       return;
     }
-
     if (password.length < 6) {
       setRegisterError("Password minimal 6 karakter.");
       return;
     }
 
     setRegisterError("");
-    setLoginForm({ email, password });
-    localStorage.setItem("mindtrack-session", "active");
-    setIsAuthenticated(true);
-    showToast("Registrasi berhasil.");
+    try {
+      const data = await apiRegister(username.trim(), password);
+      localStorage.setItem("mindtrack-session", "active");
+      localStorage.setItem("mindtrack-username", data.username);
+      localStorage.setItem("mindtrack-token", data.token);
+      setIsAuthenticated(true);
+      showToast("Registrasi berhasil.");
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Registrasi gagal. Coba username lain.";
+      setRegisterError(msg);
+    }
   }
 
   if (!isAuthenticated) {
@@ -404,8 +371,8 @@ function App() {
       return (
         <LandingPage
           theme={theme}
-          onOpenLogin={() => navigatePublicView("login")}
-          onOpenRegister={() => navigatePublicView("register")}
+          onOpenLogin={() => setPublicView("login")}
+          onOpenRegister={() => setPublicView("register")}
         />
       );
     }
@@ -420,7 +387,7 @@ function App() {
           setRegisterForm={setRegisterForm}
           setShowPassword={setShowRegisterPassword}
           onSubmit={handleRegister}
-          onOpenLogin={() => navigatePublicView("login")}
+          onOpenLogin={() => setPublicView("login")}
         />
       );
     }
@@ -430,13 +397,12 @@ function App() {
         theme={theme}
         loginForm={loginForm}
         loginError={loginError}
-        rememberMe={rememberMe}
         showPassword={showPassword}
         setLoginForm={setLoginForm}
-        setRememberMe={setRememberMe}
         setShowPassword={setShowPassword}
         onSubmit={handleLogin}
-        onOpenRegister={() => navigatePublicView("register")}
+        onBack={() => setPublicView("landing")}
+        onOpenRegister={() => setPublicView("register")}
       />
     );
   }
@@ -782,27 +748,15 @@ function LandingPage({ theme, onOpenLogin, onOpenRegister }) {
         <h2>Common Questions</h2>
         <details open>
           <summary>Is my data secure?<ChevronDown size={18} /></summary>
-          <p>
-            Your data is used only to support wellness tracking and stress prediction inside this capstone prototype.
-            Prediction history is stored locally by the backend as JSON data, so the app can show previous results
-            without sending them to unrelated third-party services.
-          </p>
+          <p>Your data is used for wellness tracking in this capstone prototype and is stored locally by the backend.</p>
         </details>
         <details>
           <summary>How does the AI detect stress?<ChevronDown size={18} /></summary>
-          <p>
-            The AI combines self-reported indicators, academic pressure factors, and digital activity patterns such as
-            screen time, app usage, and productivity balance. These inputs are processed by the trained model to
-            estimate whether the current stress level is low, moderate, or high.
-          </p>
+          <p>The model combines self-reported indicators with digital activity features to estimate stress level.</p>
         </details>
         <details>
           <summary>Can I share results with my counselor?<ChevronDown size={18} /></summary>
-          <p>
-            Yes. You can save the result from the prediction page and use it as a discussion aid with a counselor,
-            lecturer, or trusted support person. The report is meant to help explain patterns more clearly, not to
-            replace a professional mental health diagnosis.
-          </p>
+          <p>You can save a report from the results page and use it as a discussion aid.</p>
         </details>
       </section>
 
@@ -829,10 +783,8 @@ function LoginPage({
   theme,
   loginForm,
   loginError,
-  rememberMe,
   showPassword,
   setLoginForm,
-  setRememberMe,
   setShowPassword,
   onSubmit,
   onOpenRegister,
@@ -862,14 +814,14 @@ function LoginPage({
           <p>Login to your MindTrack account</p>
 
           <label className="login-field">
-            <span>Email Address</span>
+            <span>Username</span>
             <div>
               <input
-                type="email"
-                value={loginForm.email}
-                placeholder="name@university.edu"
+                type="text"
+                value={loginForm.username}
+                placeholder="Enter your username"
                 onChange={(event) =>
-                  setLoginForm((current) => ({ ...current, email: event.target.value }))
+                  setLoginForm((current) => ({ ...current, username: event.target.value }))
                 }
               />
             </div>
@@ -892,33 +844,10 @@ function LoginPage({
             </div>
           </label>
 
-          <div className="login-options">
-            <label>
-              <input
-                type="checkbox"
-                checked={rememberMe}
-                onChange={(event) => setRememberMe(event.target.checked)}
-              />
-              <span>Remember me</span>
-            </label>
-            <button type="button">Forgot password?</button>
-          </div>
-
           {loginError && <p className="login-error">{loginError}</p>}
 
           <button className="login-button" type="submit">
             Login
-          </button>
-
-          <div className="login-divider">
-            <span />
-            <small>Or continue with</small>
-            <span />
-          </div>
-
-          <button className="google-button" type="button">
-            <span className="google-dot" aria-hidden="true" />
-            Continue with Google
           </button>
 
           <p className="register-copy">
@@ -951,10 +880,8 @@ function RegisterPage({
   return (
     <main className="register-page" data-theme={theme}>
       <header className="register-top-brand">
-        <div>
-          <span className="brand-mark">M</span>
-          <strong>MindTrack</strong>
-        </div>
+        <span className="brand-mark">M</span>
+        <strong>MindTrack</strong>
       </header>
 
       <section className="register-main">
@@ -970,27 +897,14 @@ function RegisterPage({
 
           <div className="register-form">
             <label className="register-field">
-              <span>Full Name</span>
+              <span>Username</span>
               <div>
                 <User size={16} />
                 <input
                   type="text"
-                  value={registerForm.name}
-                  placeholder="John Doe"
-                  onChange={(event) => updateRegisterField("name", event.target.value)}
-                />
-              </div>
-            </label>
-
-            <label className="register-field">
-              <span>Email Address</span>
-              <div>
-                <Mail size={18} />
-                <input
-                  type="email"
-                  value={registerForm.email}
-                  placeholder="john@example.com"
-                  onChange={(event) => updateRegisterField("email", event.target.value)}
+                  value={registerForm.username}
+                  placeholder="Enter a username"
+                  onChange={(event) => updateRegisterField("username", event.target.value)}
                 />
               </div>
             </label>
@@ -1002,7 +916,7 @@ function RegisterPage({
                 <input
                   type={showPassword ? "text" : "password"}
                   value={registerForm.password}
-                  placeholder="Password"
+                  placeholder="Password (min. 6 characters)"
                   onChange={(event) => updateRegisterField("password", event.target.value)}
                 />
                 <button
@@ -1022,32 +936,9 @@ function RegisterPage({
               </div>
             </label>
 
-            <label className="register-field">
-              <span>Confirm Password</span>
-              <div>
-                <LockKeyhole size={17} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={registerForm.confirmPassword}
-                  placeholder="Confirm password"
-                  onChange={(event) => updateRegisterField("confirmPassword", event.target.value)}
-                />
-              </div>
-            </label>
-
             {registerError && <p className="login-error">{registerError}</p>}
 
             <button className="register-submit" type="submit">Register</button>
-
-            <div className="register-divider">
-              <span />
-              <small>OR CONTINUE WITH</small>
-            </div>
-
-            <button className="register-google" type="button">
-              <span className="google-dot" aria-hidden="true" />
-              Sign up with Google
-            </button>
           </div>
 
           <p className="register-login-copy">
